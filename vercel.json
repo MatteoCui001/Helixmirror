@@ -2,17 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "name": "helix-mirror",
-  "buildCommand": "npx prisma generate && npm run build",
+  "buildCommand": "export USE_POSTGRES=false && npm run build",
   "installCommand": "npm install",
   "framework": "nextjs",
   "outputDirectory": ".next",
   "regions": ["sin1"],
   "env": {
-    "USE_POSTGRES": "true"
-  },
-  "build": {
-    "env": {
-      "USE_POSTGRES": "true"
-    }
+    "USE_POSTGRES": "true",
+    "DATABASE_URL": "@database_url",
+    "DIRECT_URL": "@direct_url"
   }
 }
