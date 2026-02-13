@@ -1,6 +1,6 @@
 {
   "name": "helix-mirror",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "统一的多 Agent 管理与协同系统 - Helix Mirror 仪表盘",
   "private": true,
   "scripts": {
@@ -15,23 +15,13 @@
     "sync:auto": "node scripts/auto-sync.js",
     "sync:preview": "node scripts/auto-sync.js --dry-run",
     "sync:cron": "node scripts/cron-sync.js",
-    "db:export": "node scripts/export-for-supabase.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "prisma:seed": "node data/export/seed.js",
-    "vercel:deploy": "vercel --prod"
-  },
-  "prisma": {
-    "seed": "node data/export/seed.js"
+    "db:export": "node scripts/export-for-supabase.js"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.95.3",
     "better-sqlite3": "^12.0.0",
     "next": "15.1.7",
     "pg": "^8.18.0",
-    "prisma": "^5.22.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.1"
