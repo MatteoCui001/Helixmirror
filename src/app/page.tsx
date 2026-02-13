@@ -7,6 +7,7 @@
  * - Phase 1.5: 添加 Agent 路由组件和项目导航
  * - Phase 3: 支持云端 PostgreSQL 模式
  * - Phase 3.1: 自动数据库初始化
+ * - Phase 3.2: 使用动态渲染避免构建时数据库连接
  */
 
 import { getAgentStats, getTodayOverview, getRecentActivities } from '@/lib/queries';
@@ -19,6 +20,10 @@ import { AgentActivityChart } from '@/components/AgentActivityChart';
 import { AgentRouter } from '@/components/AgentRouter';
 import Link from 'next/link';
 
+// 禁用静态生成，强制动态渲染
+// 这样构建时不会查询数据库，只在运行时查询
+export const dynamic = 'force-dynamic';
+
 /**
  * 主页面组件（异步）
  * 
@@ -29,7 +34,11 @@ import Link from 'next/link';
 export default async function DashboardPage() {
   // 自动初始化数据库（仅 PostgreSQL 模式）
   if (process.env.USE_POSTGRES === 'true') {
-    await initializeDatabase();
+    try {
+      await initializeDatabase();
+    } catch (error) {
+      console.error('数据库初始化失败:', error);
+    }
   }
   
   // 服务端获取数据（异步）
