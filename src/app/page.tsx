@@ -6,10 +6,12 @@
  * 更新记录：
  * - Phase 1.5: 添加 Agent 路由组件和项目导航
  * - Phase 3: 支持云端 PostgreSQL 模式
+ * - Phase 3.1: 自动数据库初始化
  */
 
 import { getAgentStats, getTodayOverview, getRecentActivities } from '@/lib/queries';
 import { getProjectStats } from '@/lib/projects';
+import { initializeDatabase } from '@/lib/db-init';
 import { AgentCard } from '@/components/AgentCard';
 import { StatCard } from '@/components/StatCard';
 import { ActivityList } from '@/components/ActivityList';
@@ -22,8 +24,14 @@ import Link from 'next/link';
  * 
  * 支持双模式：SQLite（本地）和 PostgreSQL（云端）
  * 所有数据获取改为 async/await
+ * 自动初始化数据库（如果未初始化）
  */
 export default async function DashboardPage() {
+  // 自动初始化数据库（仅 PostgreSQL 模式）
+  if (process.env.USE_POSTGRES === 'true') {
+    await initializeDatabase();
+  }
+  
   // 服务端获取数据（异步）
   const [agentStats, todayOverview, recentActivities, projectStats] = await Promise.all([
     getAgentStats(),
