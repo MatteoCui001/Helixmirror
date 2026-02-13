@@ -10,11 +10,15 @@
  * 
  * 更新记录：
  * - Phase 3: 支持云端 PostgreSQL 模式
+ * - Phase 3.2: 使用动态渲染避免构建时数据库连接
  */
 
 import { getAllProjects, getProjectStats } from '@/lib/projects';
 import { ProjectCard } from '@/components/ProjectCard';
 import Link from 'next/link';
+
+// 禁用静态生成，强制动态渲染
+export const dynamic = 'force-dynamic';
 
 /**
  * 项目列表页面（异步 Server Component）
