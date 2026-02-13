@@ -1,27 +1,20 @@
 {
   "name": "helix-mirror",
-  "version": "0.3.2",
-  "description": "统一的多 Agent 管理与协同系统 - Helix Mirror 仪表盘",
+  "version": "0.4.0",
+  "description": "Helix Mirror Dashboard - Multi Agent Management System",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "db:init": "node scripts/init-db.js",
-    "db:reset": "rm -f data/helix.db && npm run db:init",
-    "sync": "node scripts/sync-data.js",
-    "sync:demo": "node scripts/sync-data.js --demo",
-    "sync:auto": "node scripts/auto-sync.js",
-    "sync:preview": "node scripts/auto-sync.js --dry-run",
-    "sync:cron": "node scripts/cron-sync.js",
-    "db:export": "node scripts/export-for-supabase.js"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.95.3",
     "better-sqlite3": "^12.0.0",
     "next": "15.2.3",
-    "pg": "^8.18.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.1"
