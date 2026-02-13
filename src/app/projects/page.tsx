@@ -2,39 +2,23 @@
  * 项目管理页面
  * 
  * 用途：展示和管理跨 Agent 共享的项目上下文
- * 
- * 页面结构：
- * 1. 页面标题和项目统计
- * 2. 项目列表（按状态分组）
- * 3. 新建项目按钮（后续实现）
- * 
- * 更新记录：
- * - Phase 3: 支持云端 PostgreSQL 模式
- * - Phase 3.2: 使用动态渲染避免构建时数据库连接
+ * 使用 SQLite（本地开发 + Vercel 部署）
  */
 
 import { getAllProjects, getProjectStats } from '@/lib/projects';
 import { ProjectCard } from '@/components/ProjectCard';
 import Link from 'next/link';
 
-// 禁用静态生成，强制动态渲染
-export const dynamic = 'force-dynamic';
-
 /**
- * 项目列表页面（异步 Server Component）
- * 
- * 支持双模式：SQLite（本地）和 PostgreSQL（云端）
+ * 项目列表页面
  */
-export default async function ProjectsPage() {
-  // 服务端获取数据（异步）
-  const [projects, stats] = await Promise.all([
-    getAllProjects(),
-    getProjectStats()
-  ]);
+export default function ProjectsPage() {
+  // 服务端获取数据
+  const projects = getAllProjects();
+  const stats = getProjectStats();
 
   return (
     <div className="min-h-screen bg-gray-900">
-      {/* 顶部导航栏 */}
       <header className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -53,7 +37,6 @@ export default async function ProjectsPage() {
               </div>
             </div>
             
-            {/* 统计概览 */}
             <div className="flex items-center space-x-4 text-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">{stats.total}</div>
@@ -70,7 +53,6 @@ export default async function ProjectsPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {projects.length === 0 ? (
-          /* 空状态 */
           <div className="bg-gray-800 rounded-lg p-12 text-center">
             <div className="text-6xl mb-4">📂</div>
             <h2 className="text-xl font-semibold text-white mb-2">暂无项目</h2>
@@ -89,7 +71,6 @@ export default async function ProjectsPage() {
             </div>
           </div>
         ) : (
-          /* 项目列表 */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
               <ProjectCard key={project.id} project={project} />

@@ -2,19 +2,10 @@
  * 仪表盘数据查询模块
  * 
  * 用途：封装所有仪表盘相关的数据查询逻辑
- * 支持双模式：SQLite（本地开发）和 PostgreSQL（云端部署）
- * 
- * 为什么单独封装：
- * - 分离数据层和展示层，便于测试和维护
- * - 双模式支持：通过 USE_POSTGRES 环境变量自动切换
- * - 可以复用这些查询在其他地方（如 API 路由）
+ * 使用 SQLite（本地开发 + Vercel 部署）
  */
 
-import { getDatabase, getPrisma } from './db';
-import { PrismaClient } from '@prisma/client';
-
-// 判断是否使用 PostgreSQL
-const USE_POSTGRES = process.env.USE_POSTGRES === 'true';
+import { getDatabase } from './db';
 
 /**
  * Agent 统计信息
@@ -52,17 +43,7 @@ export interface RecentActivity {
 /**
  * 获取所有 Agent 的统计数据
  */
-export async function getAgentStats(): Promise<AgentStat[]> {
-  if (USE_POSTGRES) {
-    return getAgentStatsPostgres();
-  }
-  return getAgentStatsSQLite();
-}
-
-/**
- * SQLite 模式：获取 Agent 统计
- */
-function getAgentStatsSQLite(): AgentStat[] {
+export function getAgentStats(): AgentStat[] {
   const db = getDatabase();
   
   const query = db.prepare(`
@@ -97,68 +78,9 @@ function getAgentStatsSQLite(): AgentStat[] {
 }
 
 /**
- * PostgreSQL 模式：获取 Agent 统计
- */
-async function getAgentStatsPostgres(): Promise<AgentStat[]> {
-  const prisma = getPrisma();
-  
-  // 获取所有 agents
-  const agents = await prisma.agent.findMany();
-  
-  // 获取今日开始时间
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  // 为每个 agent 查询统计
-  const stats: AgentStat[] = [];
-  
-  for (const agent of agents) {
-    const [todayCount, totalCount, lastInteraction] = await Promise.all([
-      prisma.interaction.count({
-        where: {
-          agentId: agent.agentId,
-          createdAt: { gte: today }
-        }
-      }),
-      prisma.interaction.count({
-        where: { agentId: agent.agentId }
-      }),
-      prisma.interaction.findFirst({
-        where: { agentId: agent.agentId },
-        orderBy: { createdAt: 'desc' }
-      })
-    ]);
-    
-    stats.push({
-      id: agent.agentId,
-      name: agent.name,
-      role: agent.role,
-      totalInteractions: totalCount,
-      todayInteractions: todayCount,
-      lastActive: lastInteraction?.createdAt.toISOString() || null
-    });
-  }
-  
-  // 按今日交互数排序
-  stats.sort((a, b) => b.todayInteractions - a.todayInteractions || b.totalInteractions - a.totalInteractions);
-  
-  return stats;
-}
-
-/**
  * 获取今日概览统计
  */
-export async function getTodayOverview(): Promise<TodayOverview> {
-  if (USE_POSTGRES) {
-    return getTodayOverviewPostgres();
-  }
-  return getTodayOverviewSQLite();
-}
-
-/**
- * SQLite 模式：获取今日概览
- */
-function getTodayOverviewSQLite(): TodayOverview {
+export function getTodayOverview(): TodayOverview {
   const db = getDatabase();
   
   const query = db.prepare(`
@@ -174,49 +96,9 @@ function getTodayOverviewSQLite(): TodayOverview {
 }
 
 /**
- * PostgreSQL 模式：获取今日概览
- */
-async function getTodayOverviewPostgres(): Promise<TodayOverview> {
-  const prisma = getPrisma();
-  
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const [messages, activeAgents, interactions] = await Promise.all([
-    prisma.interaction.aggregate({
-      where: { createdAt: { gte: today } },
-      _sum: { messageCount: true }
-    }),
-    prisma.interaction.groupBy({
-      by: ['agentId'],
-      where: { createdAt: { gte: today } }
-    }),
-    prisma.interaction.count({
-      where: { createdAt: { gte: today } }
-    })
-  ]);
-  
-  return {
-    totalMessages: messages._sum.messageCount || 0,
-    activeAgents: activeAgents.length,
-    totalInteractions: interactions
-  };
-}
-
-/**
  * 获取最近活动列表
  */
-export async function getRecentActivities(limit: number = 10): Promise<RecentActivity[]> {
-  if (USE_POSTGRES) {
-    return getRecentActivitiesPostgres(limit);
-  }
-  return getRecentActivitiesSQLite(limit);
-}
-
-/**
- * SQLite 模式：获取最近活动
- */
-function getRecentActivitiesSQLite(limit: number): RecentActivity[] {
+export function getRecentActivities(limit: number = 10): RecentActivity[] {
   const db = getDatabase();
   
   const query = db.prepare(`
@@ -237,51 +119,13 @@ function getRecentActivitiesSQLite(limit: number): RecentActivity[] {
 }
 
 /**
- * PostgreSQL 模式：获取最近活动
- */
-async function getRecentActivitiesPostgres(limit: number): Promise<RecentActivity[]> {
-  const prisma = getPrisma();
-  
-  const interactions = await prisma.interaction.findMany({
-    take: limit,
-    orderBy: { createdAt: 'desc' },
-    include: { agent: true }
-  });
-  
-  return interactions.map(i => ({
-    id: i.id,
-    agentName: i.agent.name,
-    agentRole: i.agent.role,
-    channel: i.channel,
-    messagePreview: i.messagePreview,
-    createdAt: i.createdAt.toISOString()
-  }));
-}
-
-/**
  * 添加一条交互记录
  */
-export async function addInteraction(
+export function addInteraction(
   agentId: string,
   channel: string,
   messagePreview: string,
   messageCount: number = 1
-): Promise<void> {
-  if (USE_POSTGRES) {
-    await addInteractionPostgres(agentId, channel, messagePreview, messageCount);
-  } else {
-    addInteractionSQLite(agentId, channel, messagePreview, messageCount);
-  }
-}
-
-/**
- * SQLite 模式：添加交互记录
- */
-function addInteractionSQLite(
-  agentId: string,
-  channel: string,
-  messagePreview: string,
-  messageCount: number
 ): void {
   const db = getDatabase();
   
@@ -291,25 +135,4 @@ function addInteractionSQLite(
   `);
   
   insert.run(agentId, channel, messagePreview, messageCount);
-}
-
-/**
- * PostgreSQL 模式：添加交互记录
- */
-async function addInteractionPostgres(
-  agentId: string,
-  channel: string,
-  messagePreview: string,
-  messageCount: number
-): Promise<void> {
-  const prisma = getPrisma();
-  
-  await prisma.interaction.create({
-    data: {
-      agentId,
-      channel,
-      messagePreview,
-      messageCount
-    }
-  });
 }
