@@ -1,0 +1,107 @@
+// Prisma Schema - Helix Mirror 数据库定义
+// 
+// 用途：
+// - 定义 Supabase PostgreSQL 数据库结构
+// - 支持 Prisma Client 类型安全的 ORM 操作
+// - 用于云端部署（Vercel + Supabase）
+// 
+// 本地开发仍然使用 SQLite（通过 src/lib/db.ts 的切换逻辑）
+// 
+// 数据库模型对应本地 SQLite 表：
+// - Agent → agents 表
+// - Interaction → interactions 表
+// - Project → projects 表
+// - RoutingLog → routing_logs 表
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Agent 模型
+// 对应本地表：agents
+// 用途：存储每个 AI Agent 的元信息
+// - main: OpenClaw 主渠道，日常对话
+// - craft: Discord 代码助手
+// - alpha: Discord 投资助手
+// - helix: Discord 通用助手
+model Agent {
+  id          String   @id @default(uuid())
+  agentId     String   @unique @map("agent_id")  // 业务ID：main/craft/alpha/helix
+  name        String
+  role        String
+  description String?
+  channel     String?  // 所在渠道：Discord/飞书
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  // 关联关系
+  interactions Interaction[]
+  
+  @@map("agents")
+}
+
+// Interaction 模型
+// 对应本地表：interactions
+// 用途：
+// - 核心数据表，记录每次用户与 Agent 的交互
+// - messagePreview 存储对话前 100 字用于列表展示
+// - messageCount 聚合同一批连续消息（5分钟窗口内）
+model Interaction {
+  id             Int      @id @default(autoincrement())
+  agentId        String   @map("agent_id")
+  channel        String   // 对话发生的渠道
+  messagePreview String   @map("message_preview")  // 消息预览（前100字）
+  messageCount   Int      @default(1) @map("message_count")  // 本次对话消息数
+  createdAt      DateTime @default(now()) @map("created_at")
+  
+  // 关联关系
+  agent Agent @relation(fields: [agentId], references: [agentId])
+  
+  // 索引：加速按时间范围查询
+  @@index([agentId, createdAt])
+  @@map("interactions")
+}
+
+// Project 模型
+// 对应本地表：projects
+// 用途：
+// - 存储用户与 Agent 共同进行的项目
+// - 实现跨 Agent 记忆共享
+// - agentIds 是 JSON 数组，记录关联的 Agent
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  status      String   @default("active")  // active/paused/completed
+  agentIds    String   @map("agent_ids")   // JSON 数组，关联的 Agent ID
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+  
+  @@map("projects")
+}
+
+// RoutingLog 模型
+// 对应本地表：routing_logs
+// 用途：
+// - 记录智能路由推荐历史
+// - 用于统计推荐准确率
+// - wasAccepted 记录用户是否接受了推荐
+model RoutingLog {
+  id                   Int      @id @default(autoincrement())
+  inputText            String   @map("input_text")  // 用户输入内容
+  recommendedAgentId   String   @map("recommended_agent_id")
+  recommendedScore     Int?     @map("recommended_score")
+  userSelectedAgentId  String?  @map("user_selected_agent_id")
+  wasAccepted          Boolean? @map("was_accepted")
+  createdAt            DateTime @default(now()) @map("created_at")
+  
+  // 索引：加速统计查询
+  @@index([createdAt])
+  @@index([recommendedAgentId])
+  @@map("routing_logs")
+}

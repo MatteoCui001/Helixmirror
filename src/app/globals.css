@@ -1,0 +1,29 @@
+/**
+ * 全局样式文件
+ * 
+ * 用途：定义 Tailwind CSS 的基础导入和自定义全局样式
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义滚动条样式 - 让仪表盘看起来更精致 */
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #1f2937;  /* gray-800 */
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #4b5563;  /* gray-600 */
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;  /* gray-500 */
+  }
+}
