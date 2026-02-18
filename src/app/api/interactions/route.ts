@@ -13,9 +13,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/db';
 import { validateToken, unauthorizedResponse, isDevelopment } from '@/lib/auth';
-import { 
-  AddInteractionSchema, 
-  QueryInteractionsSchema 
+import { checkRateLimit, getClientIp, RATE_LIMIT_MAX } from '@/lib/rate-limit';
+import {
+  AddInteractionSchema,
+  QueryInteractionsSchema
 } from '@/lib/validation';
 
 /**
@@ -33,6 +34,25 @@ function errorResponse(message: string, details?: string, status: number = 400) 
  */
 export async function POST(request: NextRequest) {
   try {
+    // 速率限制检查
+    const clientIp = getClientIp(request);
+    const rateLimit = checkRateLimit(clientIp);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: '请求过于频繁，请稍后再试' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(Math.ceil(rateLimit.resetTime / 1000)),
+            'Retry-After': String(Math.ceil((rateLimit.resetTime - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
     // 认证检查（生产环境必需）
     if (!isDevelopment() && !validateToken(request)) {
       return unauthorizedResponse();
@@ -96,7 +116,14 @@ export async function POST(request: NextRequest) {
       channel,
       messagePreview,
       messageCount,
-    }, { status: 201 });
+    }, {
+      status: 201,
+      headers: {
+        'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+        'X-RateLimit-Remaining': String(rateLimit.remaining),
+        'X-RateLimit-Reset': String(Math.ceil(rateLimit.resetTime / 1000)),
+      },
+    });
 
   } catch (error) {
     console.error('[API] 添加交互记录失败:', error);
