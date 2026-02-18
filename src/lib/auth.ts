@@ -15,8 +15,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // 从环境变量获取 API Token
-// 如果没有设置，使用默认值（仅开发用，生产必须设置）
-const API_TOKEN = process.env.API_TOKEN || 'dev-token-change-in-production';
+const API_TOKEN = process.env.API_TOKEN;
+
+// 检查 API_TOKEN 是否设置
+if (!API_TOKEN) {
+  throw new Error('API_TOKEN environment variable is not set');
+}
 
 /**
  * 验证 API Token
