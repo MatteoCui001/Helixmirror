@@ -3,16 +3,28 @@
  * 
  * 用途：通过 HTTP 请求获取和添加交互记录
  * 使用 SQLite
+ * 
+ * 安全更新：
+ * - 添加 Token 认证（生产环境必需）
+ * - 开发环境可跳过（方便调试）
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/db';
+import { validateToken, unauthorizedResponse, isDevelopment } from '@/lib/auth';
 
 /**
  * POST - 添加交互记录
+ * 
+ * 注意：修改操作需要认证（生产环境）
  */
 export async function POST(request: NextRequest) {
   try {
+    // 认证检查（生产环境必需）
+    if (!isDevelopment() && !validateToken(request)) {
+      return unauthorizedResponse();
+    }
+    
     const body = await request.json();
     const { agentId, channel, messagePreview, messageCount = 1 } = body;
 
@@ -64,9 +76,16 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET - 获取最近交互记录
+ * 
+ * 注意：读取操作开放（方便展示），如需保护可添加认证
  */
 export async function GET(request: NextRequest) {
   try {
+    // GET 操作默认开放，如需保护可取消下面注释
+    // if (!isDevelopment() && !validateToken(request)) {
+    //   return unauthorizedResponse();
+    // }
+    
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10');
     

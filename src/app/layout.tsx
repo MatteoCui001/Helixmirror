@@ -7,12 +7,14 @@
  * - 使用深色主题（更适合长时间查看的仪表盘）
  * - 加载 Inter 字体（现代、易读）
  * - 初始化数据库（只在服务端执行一次）
+ * - 全局错误边界（防止白屏）
  */
 
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { initDatabase } from '@/lib/db';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // 加载 Inter 字体 - 现代、专业的无衬线字体
 const inter = Inter({ subsets: ['latin'] });
@@ -42,7 +44,10 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={`${inter.className} bg-gray-900 text-white min-h-screen`}>
-        {children}
+        {/* 全局错误边界 - 捕获所有子组件的错误 */}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </body>
     </html>
   );

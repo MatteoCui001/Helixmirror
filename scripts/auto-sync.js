@@ -7,6 +7,7 @@
  * - 使用新的 Agent 识别配置
  * - 支持 Discord 多 Agent 区分
  * - 显示识别置信度统计
+ * - 从 session 文件读取 Discord 消息（解决 gateway.log 不记录的问题）
  */
 
 const Database = require('better-sqlite3');
@@ -26,7 +27,7 @@ function getExistingTimestamps(db) {
 }
 
 /**
- * 解析 gateway.log（改进版 Agent 识别）
+ * 解析 gateway.log（飞书消息）
  */
 function parseGatewayLog(logPath) {
   const interactions = [];
@@ -50,6 +51,9 @@ function parseGatewayLog(logPath) {
     const timestamp = new Date(match[1]);
     const channel = match[2] === 'feishu' ? '飞书' : 'Discord';
     
+    // 只处理飞书消息
+    if (channel !== '飞书') continue;
+    
     const textMatch = line.match(/deliver called:\s*text=(.+)$/);
     if (!textMatch) continue;
     
@@ -61,35 +65,115 @@ function parseGatewayLog(logPath) {
       currentBatch.messages.push(message);
     } else {
       if (currentBatch) batches.push(currentBatch);
-      currentBatch = { timestamp, messages: [message], channel };
+      currentBatch = { timestamp, messages: [message], channel, agentId: 'main' };
     }
   }
   
   if (currentBatch) batches.push(currentBatch);
   
-  // 转换为交互记录（使用新的识别逻辑）
+  // 转换为交互记录
   for (const batch of batches) {
     if (batch.messages.length === 0) continue;
-    
-    const fullContent = batch.messages.join(' ');
-    
-    // 使用新的 Agent 识别
-    const identification = identifyAgentByMessage(fullContent, batch.channel);
-    const agent = getAgentInfo(identification.agentId);
     
     const preview = batch.messages[0].slice(0, 100) + 
       (batch.messages[0].length > 100 ? '...' : '');
     
     interactions.push({
-      agentId: identification.agentId,
-      agentName: agent?.name || 'Unknown',
-      channel: batch.channel,
+      agentId: 'main',
+      agentName: 'Main',
+      channel: '飞书',
       messagePreview: preview,
       messageCount: batch.messages.length,
       timestamp: batch.timestamp,
       source: logPath,
-      confidence: identification.confidence
+      confidence: 1.0
     });
+  }
+  
+  return interactions;
+}
+
+/**
+ * 解析 session JSONL 文件（Discord 消息）
+ */
+function parseSessionFiles() {
+  const interactions = [];
+  
+  // 查找所有 session 文件
+  const sessionsDir = path.join(process.env.HOME, '.openclaw', 'agents', 'craft', 'sessions');
+  if (!fs.existsSync(sessionsDir)) {
+    console.warn(`⚠️ Session 目录不存在: ${sessionsDir}`);
+    return interactions;
+  }
+  
+  const sessionFiles = fs.readdirSync(sessionsDir)
+    .filter(f => f.endsWith('.jsonl'))
+    .map(f => path.join(sessionsDir, f));
+  
+  for (const filePath of sessionFiles) {
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      // 聚合消息（5分钟窗口）
+      let currentBatch = null;
+      const batches = [];
+      
+      for (const line of lines) {
+        try {
+          const event = JSON.parse(line);
+          
+          // 只处理用户消息
+          if (event.type !== 'message') continue;
+          if (event.message?.role !== 'user') continue;
+          
+          const content = event.message?.content?.[0]?.text;
+          if (!content) continue;
+          
+          const timestamp = new Date(event.timestamp);
+          
+          // 检查是否在同一批次（5分钟窗口）
+          if (currentBatch && 
+              (timestamp.getTime() - currentBatch.timestamp.getTime()) < 5 * 60 * 1000) {
+            currentBatch.messages.push(content);
+          } else {
+            if (currentBatch) batches.push(currentBatch);
+            currentBatch = { timestamp, messages: [content] };
+          }
+        } catch (e) {
+          // 忽略解析错误的行
+        }
+      }
+      
+      if (currentBatch) batches.push(currentBatch);
+      
+      // 转换为交互记录
+      for (const batch of batches) {
+        if (batch.messages.length === 0) continue;
+        
+        const fullContent = batch.messages.join(' ');
+        
+        // 识别 Agent
+        const identification = identifyAgentByMessage(fullContent, 'Discord');
+        const agent = getAgentInfo(identification.agentId);
+        
+        const preview = batch.messages[0].slice(0, 100) + 
+          (batch.messages[0].length > 100 ? '...' : '');
+        
+        interactions.push({
+          agentId: identification.agentId,
+          agentName: agent?.name || 'Unknown',
+          channel: 'Discord',
+          messagePreview: preview,
+          messageCount: batch.messages.length,
+          timestamp: batch.timestamp,
+          source: filePath,
+          confidence: identification.confidence
+        });
+      }
+    } catch (error) {
+      console.warn(`⚠️ 解析 session 文件失败: ${filePath}`, error.message);
+    }
   }
   
   return interactions;
@@ -135,20 +219,28 @@ async function syncData(dryRun = false) {
   const db = new Database(DB_PATH);
   
   try {
+    // 1. 从 gateway.log 读取飞书消息
     const logPath = path.join(process.env.HOME, '.openclaw', 'logs', 'gateway.log');
+    console.log('📥 正在解析 gateway.log（飞书消息）...');
+    const feishuInteractions = parseGatewayLog(logPath);
+    console.log(`   找到 ${feishuInteractions.length} 条飞书记录\n`);
     
-    console.log('📥 正在解析 OpenClaw 日志...');
-    const interactions = parseGatewayLog(logPath);
-    console.log(`   找到 ${interactions.length} 条记录\n`);
+    // 2. 从 session 文件读取 Discord 消息
+    console.log('📥 正在解析 session 文件（Discord 消息）...');
+    const discordInteractions = parseSessionFiles();
+    console.log(`   找到 ${discordInteractions.length} 条 Discord 记录\n`);
     
-    if (interactions.length === 0) {
+    // 合并所有消息
+    const allInteractions = [...feishuInteractions, ...discordInteractions];
+    
+    if (allInteractions.length === 0) {
       console.log('⚠️ 没有找到可导入的数据');
       return;
     }
     
     // 显示识别统计
     const stats = {};
-    for (const i of interactions) {
+    for (const i of allInteractions) {
       stats[i.agentId] = (stats[i.agentId] || 0) + 1;
     }
     console.log('📊 Agent 识别统计:');
@@ -159,7 +251,7 @@ async function syncData(dryRun = false) {
     
     // 检查现有数据
     const existingTimestamps = getExistingTimestamps(db);
-    const newInteractions = filterNewInteractions(interactions, existingTimestamps);
+    const newInteractions = filterNewInteractions(allInteractions, existingTimestamps);
     
     console.log(`🆕 新记录: ${newInteractions.length} 条\n`);
     
