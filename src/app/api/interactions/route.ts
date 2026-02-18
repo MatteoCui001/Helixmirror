@@ -4,19 +4,32 @@
  * 用途：通过 HTTP 请求获取和添加交互记录
  * 使用 SQLite
  * 
- * 安全更新：
- * - 添加 Token 认证（生产环境必需）
- * - 开发环境可跳过（方便调试）
+ * 更新：
+ * - 添加 Zod 输入验证
+ * - 统一错误响应格式
+ * - Token 认证（生产环境）
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/db';
 import { validateToken, unauthorizedResponse, isDevelopment } from '@/lib/auth';
+import { 
+  AddInteractionSchema, 
+  QueryInteractionsSchema 
+} from '@/lib/validation';
+
+/**
+ * 统一错误响应格式
+ */
+function errorResponse(message: string, details?: string, status: number = 400) {
+  return NextResponse.json(
+    { error: message, details },
+    { status }
+  );
+}
 
 /**
  * POST - 添加交互记录
- * 
- * 注意：修改操作需要认证（生产环境）
  */
 export async function POST(request: NextRequest) {
   try {
@@ -25,26 +38,46 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse();
     }
     
-    const body = await request.json();
-    const { agentId, channel, messagePreview, messageCount = 1 } = body;
-
-    // 参数验证
-    if (!agentId || !channel || !messagePreview) {
+    // 解析请求体
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return errorResponse('请求体必须是有效的 JSON', undefined, 400);
+    }
+    
+    // Zod 验证
+    const validationResult = AddInteractionSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      // 格式化 Zod 错误信息
+      const errors = validationResult.error.errors.map(e => ({
+        field: e.path.join('.'),
+        message: e.message,
+      }));
+      
       return NextResponse.json(
-        { error: '缺少必需参数: agentId, channel, messagePreview' },
+        { 
+          error: '参数验证失败', 
+          details: errors 
+        },
         { status: 400 }
       );
     }
-
+    
+    // 验证通过，使用解析后的数据
+    const { agentId, channel, messagePreview, messageCount } = validationResult.data;
+    
     const db = getDatabase();
     
-    // 验证 agent 是否存在
+    // 验证 agent 是否存在（额外的业务验证）
     const agent = db.prepare('SELECT id FROM agents WHERE id = ?').get(agentId);
     
     if (!agent) {
-      return NextResponse.json(
-        { error: `Agent "${agentId}" 不存在`, availableAgents: ['main', 'craft', 'alpha', 'helix'] },
-        { status: 404 }
+      return errorResponse(
+        `Agent "${agentId}" 不存在`,
+        '可用的 Agents: main, craft, alpha, helix',
+        404
       );
     }
 
@@ -62,22 +95,21 @@ export async function POST(request: NextRequest) {
       agentId,
       channel,
       messagePreview,
-      messageCount
+      messageCount,
     }, { status: 201 });
 
   } catch (error) {
-    console.error('添加交互记录失败:', error);
-    return NextResponse.json(
-      { error: '服务器内部错误', details: (error as Error).message },
-      { status: 500 }
+    console.error('[API] 添加交互记录失败:', error);
+    return errorResponse(
+      '服务器内部错误',
+      process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
+      500
     );
   }
 }
 
 /**
  * GET - 获取最近交互记录
- * 
- * 注意：读取操作开放（方便展示），如需保护可添加认证
  */
 export async function GET(request: NextRequest) {
   try {
@@ -86,8 +118,17 @@ export async function GET(request: NextRequest) {
     //   return unauthorizedResponse();
     // }
     
+    // 解析查询参数
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '10');
+    
+    // Zod 验证查询参数
+    const validationResult = QueryInteractionsSchema.safeParse({
+      limit: searchParams.get('limit') || undefined,
+    });
+    
+    const limit = validationResult.success 
+      ? validationResult.data.limit 
+      : 10;
     
     const db = getDatabase();
     
@@ -108,13 +149,19 @@ export async function GET(request: NextRequest) {
     
     const records = query.all(limit);
 
-    return NextResponse.json({ records, count: records.length });
+    return NextResponse.json({ 
+      success: true,
+      records, 
+      count: records.length,
+      limit,
+    });
 
   } catch (error) {
-    console.error('查询交互记录失败:', error);
-    return NextResponse.json(
-      { error: '服务器内部错误', details: (error as Error).message },
-      { status: 500 }
+    console.error('[API] 查询交互记录失败:', error);
+    return errorResponse(
+      '服务器内部错误',
+      process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
+      500
     );
   }
 }
