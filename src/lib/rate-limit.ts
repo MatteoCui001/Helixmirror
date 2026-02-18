@@ -1,8 +1,12 @@
 /**
  * Rate Limit Module
  *
+ * 用途：为 API 端点提供基于内存的速率限制保护，防止滥用和 DDoS 攻击
  * 使用内存存储（Map）实现简单的速率限制
  * 限制每个 IP 每分钟最多 30 次请求
+ *
+ * @author Claude
+ * @since 2026-02-18
  */
 
 interface RateLimitEntry {
