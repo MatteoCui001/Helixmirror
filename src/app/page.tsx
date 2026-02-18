@@ -1,122 +1,38 @@
 /**
- * 主仪表盘页面
+ * 主仪表盘页面 - 带 Loading 状态
  * 
  * 用途：Helix Mirror 的核心界面，展示所有 Agent 的交互统计
- * 使用 SQLite（本地开发 + Vercel 部署）
+ * 
+ * 改进：
+ * - 添加 Suspense 和 loading 状态
+ * - 使用骨架屏提升感知性能
+ * - 组件级错误边界
  */
 
-import { getAgentStats, getTodayOverview, getRecentActivities } from '@/lib/queries';
-import { getProjectStats } from '@/lib/projects';
-import { AgentCard } from '@/components/AgentCard';
-import { StatCard } from '@/components/StatCard';
-import { ActivityList } from '@/components/ActivityList';
-import { AgentActivityChart } from '@/components/AgentActivityChart';
+import { Suspense } from 'react';
 import { AgentRouter } from '@/components/AgentRouter';
-import Link from 'next/link';
+import { DashboardSkeleton } from '@/components/Skeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { DashboardContent } from './DashboardContent';
 
 /**
  * 主页面组件
+ * 
+ * 使用 Suspense 实现渐进式加载：
+ * - 数据获取期间显示骨架屏
+ * - 避免白屏等待
+ * - 提升用户体验
  */
 export default function DashboardPage() {
-  // 服务端获取数据
-  const agentStats = getAgentStats();
-  const todayOverview = getTodayOverview();
-  const recentActivities = getRecentActivities(10);
-  const projectStats = getProjectStats();
-  
   return (
     <div className="min-h-screen bg-gray-900">
-      {/* 顶部标题栏 */}
-      <header className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                🧬 Helix Mirror
-              </h1>
-              <p className="mt-1 text-sm text-gray-400">
-                Agent 交互仪表盘 - 观察、理解、优化你的 AI 助手网络
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/projects"
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white text-sm transition-colors"
-              >
-                <span>📁</span>
-                <span>项目 ({projectStats.active}/{projectStats.total})</span>
-              </Link>
-              
-              <div className="text-sm text-gray-400">
-                {new Date().toLocaleDateString('zh-CN', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  weekday: 'long'
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <section className="mb-8">
-          <AgentRouter />
-        </section>
-
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4">📊 今日概览</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard
-              title="总消息数"
-              value={todayOverview.totalMessages}
-              icon="💬"
-              color="blue"
-            />
-            <StatCard
-              title="活跃 Agent"
-              value={todayOverview.activeAgents}
-              icon="🤖"
-              color="green"
-            />
-            <StatCard
-              title="对话次数"
-              value={todayOverview.totalInteractions}
-              icon="🗣️"
-              color="purple"
-            />
-          </div>
-        </section>
-
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4">📈 活动趋势</h2>
-          <div className="bg-gray-800 rounded-lg p-6">
-            <AgentActivityChart agentStats={agentStats} />
-          </div>
-        </section>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <h2 className="text-lg font-semibold text-white mb-4">🤖 Agent 状态</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {agentStats.map((agent) => (
-                <AgentCard
-                  key={agent.id}
-                  agent={agent}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold text-white mb-4">📝 最近活动</h2>
-            <div className="bg-gray-800 rounded-lg p-4">
-              <ActivityList activities={recentActivities} />
-            </div>
-          </div>
-        </div>
-      </main>
+      {/* 全局错误边界 */}
+      <ErrorBoundary>
+        {/* Suspense 包裹数据依赖的组件 */}
+        <Suspense fallback={<DashboardSkeleton />}>
+          <DashboardContent />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }
