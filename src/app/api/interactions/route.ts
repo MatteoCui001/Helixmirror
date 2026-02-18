@@ -140,11 +140,30 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    // GET 操作默认开放，如需保护可取消下面注释
-    // if (!isDevelopment() && !validateToken(request)) {
-    //   return unauthorizedResponse();
-    // }
-    
+    // 速率限制检查
+    const clientIp = getClientIp(request);
+    const rateLimit = checkRateLimit(clientIp);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: '请求过于频繁，请稍后再试' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(Math.ceil(rateLimit.resetTime / 1000)),
+            'Retry-After': String(Math.ceil((rateLimit.resetTime - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
+    // 认证检查（生产环境必需）
+    if (!isDevelopment() && !validateToken(request)) {
+      return unauthorizedResponse();
+    }
+
     // 解析查询参数
     const { searchParams } = new URL(request.url);
     
@@ -176,11 +195,17 @@ export async function GET(request: NextRequest) {
     
     const records = query.all(limit);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      records, 
+      records,
       count: records.length,
       limit,
+    }, {
+      headers: {
+        'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+        'X-RateLimit-Remaining': String(rateLimit.remaining),
+        'X-RateLimit-Reset': String(Math.ceil(rateLimit.resetTime / 1000)),
+      },
     });
 
   } catch (error) {
