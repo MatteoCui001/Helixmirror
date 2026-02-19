@@ -21,7 +21,22 @@ DEPLOY_PROFILE=cloud npm run cloud:check
 DEPLOY_PROFILE=cloud npm run build:cloud
 ```
 
-## 4. Runtime
+## 4. Deploy (Vercel)
+
+```bash
+vercel login
+DEPLOY_PROFILE=cloud npm run deploy:preview
+DEPLOY_PROFILE=cloud npm run deploy:prod
+```
+
+Or with token:
+
+```bash
+DEPLOY_PROFILE=cloud VERCEL_TOKEN=xxx vercel --yes --token "$VERCEL_TOKEN"
+DEPLOY_PROFILE=cloud VERCEL_TOKEN=xxx vercel --prod --yes --token "$VERCEL_TOKEN"
+```
+
+## 5. Runtime
 
 ```bash
 DEPLOY_PROFILE=cloud npm run start
