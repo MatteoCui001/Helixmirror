@@ -10,7 +10,6 @@
  */
 
 import { Suspense } from 'react';
-import { AgentRouter } from '@/components/AgentRouter';
 import { DashboardSkeleton } from '@/components/Skeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DashboardContent } from './DashboardContent';

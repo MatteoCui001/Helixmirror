@@ -11,13 +11,9 @@
  */
 
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { initDatabase } from '@/lib/db';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-
-// 加载 Inter 字体 - 现代、专业的无衬线字体
-const inter = Inter({ subsets: ['latin'] });
 
 // 页面元信息 - 用于 SEO 和浏览器标签
 export const metadata: Metadata = {
@@ -43,7 +39,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className={`${inter.className} bg-gray-900 text-white min-h-screen`}>
+      <body className="bg-gray-900 text-white min-h-screen">
         {/* 全局错误边界 - 捕获所有子组件的错误 */}
         <ErrorBoundary>
           {children}

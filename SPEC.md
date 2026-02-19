@@ -1,77 +1,94 @@
-# Helix Mirror - 产品 Spec
+# Helix Mirror - Product Spec
 
-**项目名：** Helix Mirror（螺旋镜）
+**Version:** 1.1  
+**Date:** 2026-02-19
 
-**一句话描述：** 一个统一的多 Agent 管理与协同系统，让每个 AI 助手共享记忆、智能路由任务、并可视化展示进化轨迹。
+## Product Summary
 
----
+Helix Mirror is a local-first dashboard for observing and coordinating multiple AI agents (Main, Craft, Alpha, Helix) across Feishu and Discord.
 
-## MVP 功能清单
+## Scope (Current)
 
-1. **透明代理层** — 统一的消息入口，自动记录所有 Agent 对话到中央日志
-2. **简单路由规则** — 基于关键词/渠道的规则路由（如"投资"→Alpha，"代码"→Craft）
-3. **基础记忆层** — 维护一个共享的 Markdown 知识库（项目列表、偏好设置、历史决策）
-4. **Web 仪表盘** — 展示今日交互统计、各 Agent 活跃度、最近对话概览
+1. Unified dashboard for daily agent activity
+2. Keyword-based agent recommendation
+3. Project memory layer (SQLite-backed)
+4. Interaction/project APIs with validation, auth, and rate-limit
+5. Manual and scheduled data sync scripts from local OpenClaw data
 
----
+## Out of Scope (Current)
 
-## 不做的事（明确排除）
+- LLM-based intent classification
+- Cross-channel real-time bidirectional sync
+- Multi-user auth/permissions
+- Automated learning/optimization loops
 
-- 复杂的自然语言意图分类（Phase 3 再说）
-- 自动优化/学习机制
-- 跨渠道的实时双向同步
-- 复杂的权限管理系统
+## Tech Stack
 
----
+- Next.js 14 (App Router)
+- React 18 + TypeScript
+- Tailwind CSS + Recharts
+- SQLite via better-sqlite3
 
-## 技术栈
+## Data Source
 
-- 前端：Next.js 15 + TypeScript + Tailwind CSS
-- 图表：Recharts
-- 数据库：SQLite（better-sqlite3）
-- 部署：本地运行（后续可上云）
+- `~/.openclaw/logs/gateway.log`
+- OpenClaw session files (for Discord interactions)
+- Manual script import for fallback/demo
 
----
+## Runtime
 
-## 数据来源
+- Phase 1/1.5: local-first (`npm run dev`)
+- Cloud migration is optional and not required for core functionality
 
-- OpenClaw 本地的 memory 文件
-- 各 Agent 的 interaction logs（需要配置导出）
+## Functional Requirements
 
----
+### FR-1 Dashboard
 
-## 部署方式
+- Show today's total messages, active agents, interaction count
+- Show agent cards with today/total/last-active metrics
+- Show recent interactions list
 
-- Phase 1：纯本地，运行 `npm run dev`，访问 `localhost:3000`
-- Phase 2：可选迁移到 Supabase + Vercel
+### FR-2 Router
 
----
+- Input free text and rank top matching agents by keyword score
+- Display channel and score
+- Keep algorithm deterministic and low-latency
 
-## 预期效果
+### FR-3 Project Memory
 
-```
-┌─────────────────────────────────────────┐
-│  Helix Mirror Dashboard                 │
-├─────────────────────────────────────────┤
-│  📊 今日概览    🔥 活跃Agent   📈 趋势  │
-│  ─────────────────────────────────────  │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐   │
-│  │  Craft  │ │  Main   │ │  Alpha  │   │
-│  │  ████░░ │ │  █████░ │ │  ██░░░░ │   │
-│  │  4对话  │ │  5对话  │ │  2对话  │   │
-│  └─────────┘ └─────────┘ └─────────┘   │
-│  ─────────────────────────────────────  │
-│  最近活动：                              │
-│  • 13:05 - Craft: Helix Mirror spec    │
-│  • 12:30 - Main: 复盘系统搭建          │
-│  • 10:15 - Alpha: 持仓分析             │
-└─────────────────────────────────────────┘
-```
+- List projects with status (`active|paused|completed`)
+- Create project with optional description and related agents
+- Update project status
 
----
+### FR-4 Interaction API
 
-## 后续演进
+- `POST /api/interactions`
+- `GET /api/interactions?limit=...`
+- Validate payload via Zod
+- Production requires bearer token
+- Rate-limit by client IP
 
-- Phase 2：添加智能路由（基于意图分类）
-- Phase 3：云端部署 + 移动端访问
-- Phase 4：进化看板（Agent 能力提升可视化）
+### FR-5 Project API
+
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/projects/:id`
+- `PATCH /api/projects/:id`
+- Validate payload via Zod
+- Production requires bearer token
+- Rate-limit by client IP
+
+## Non-Functional Requirements
+
+- Project compiles and type-checks cleanly
+- Lint runs non-interactively
+- Build does not depend on external fonts/network fetch at compile time
+- API errors use consistent JSON shape (`error`, optional `details`)
+
+## Acceptance Criteria
+
+- `npm run typecheck` passes
+- `npm run lint` passes
+- `npm run build` passes
+- Dashboard and `/projects` render correctly
+- APIs above return expected success/error responses

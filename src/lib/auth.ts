@@ -14,14 +14,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-// 从环境变量获取 API Token
-const API_TOKEN = process.env.API_TOKEN;
-
-// 检查 API_TOKEN 是否设置
-if (!API_TOKEN) {
-  throw new Error('API_TOKEN environment variable is not set');
-}
-
 /**
  * 验证 API Token
  * 
@@ -31,6 +23,11 @@ if (!API_TOKEN) {
  * @returns 验证成功返回 true，失败返回 false
  */
 export function validateToken(request: NextRequest): boolean {
+  const apiToken = process.env.API_TOKEN?.trim();
+  if (!apiToken) {
+    return false;
+  }
+
   const authHeader = request.headers.get('authorization');
   
   if (!authHeader) {
@@ -43,7 +40,7 @@ export function validateToken(request: NextRequest): boolean {
     return false;
   }
   
-  return parts[1] === API_TOKEN;
+  return parts[1] === apiToken;
 }
 
 /**

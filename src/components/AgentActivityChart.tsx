@@ -48,12 +48,24 @@ function formatChartData(stats: AgentStat[]) {
  * - 比默认提示框更美观
  * - 显示中文标签
  */
-function CustomTooltip({ active, payload, label }: any) {
+interface TooltipEntry {
+  name: string;
+  value: string | number;
+  color?: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (active && payload && payload.length) {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 shadow-xl">
         <p className="text-white font-semibold mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry, index) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: {entry.value} 次
           </p>

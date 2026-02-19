@@ -20,6 +20,29 @@ export interface Project {
   updatedAt: string;
 }
 
+interface ProjectRow {
+  id: number;
+  name: string;
+  description: string | null;
+  status: 'active' | 'paused' | 'completed';
+  agentIds: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function parseAgentIds(agentIds: string | null): string[] {
+  if (!agentIds) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(agentIds);
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * 获取所有项目
  */
@@ -45,11 +68,11 @@ export function getAllProjects(): Project[] {
       updated_at DESC
   `);
   
-  const rows = query.all() as any[];
+  const rows = query.all() as ProjectRow[];
   
-  return rows.map(row => ({
+  return rows.map((row) => ({
     ...row,
-    agentIds: row.agentIds ? JSON.parse(row.agentIds) : []
+    agentIds: parseAgentIds(row.agentIds),
   }));
 }
 
@@ -72,13 +95,13 @@ export function getProjectById(id: number): Project | null {
     WHERE id = ?
   `);
   
-  const row = query.get(id) as any;
+  const row = query.get(id) as ProjectRow | undefined;
   
   if (!row) return null;
   
   return {
     ...row,
-    agentIds: row.agentIds ? JSON.parse(row.agentIds) : []
+    agentIds: parseAgentIds(row.agentIds),
   };
 }
 
@@ -143,6 +166,15 @@ export function getProjectStats(): {
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
     FROM projects
   `);
-  
-  return query.get() as any;
+
+  const row = query.get() as
+    | { total: number; active: number | null; paused: number | null; completed: number | null }
+    | undefined;
+
+  return {
+    total: row?.total ?? 0,
+    active: row?.active ?? 0,
+    paused: row?.paused ?? 0,
+    completed: row?.completed ?? 0,
+  };
 }

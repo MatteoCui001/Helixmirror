@@ -24,14 +24,14 @@ import { z } from 'zod';
  * 限制：必须是预定义的 4 个 Agent 之一
  */
 export const AgentIdSchema = z.enum(['main', 'craft', 'alpha', 'helix'], {
-  errorMap: () => ({ message: 'Agent ID 必须是 main、craft、alpha 或 helix' }),
+  message: 'Agent ID 必须是 main、craft、alpha 或 helix',
 });
 
 /**
  * 渠道验证
  */
 export const ChannelSchema = z.enum(['飞书', 'Discord'], {
-  errorMap: () => ({ message: '渠道必须是 飞书 或 Discord' }),
+  message: '渠道必须是 飞书 或 Discord',
 });
 
 // ===========================================

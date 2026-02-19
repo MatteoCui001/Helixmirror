@@ -32,22 +32,13 @@ const nextConfig = {
     unoptimized: true,
   },
   
-  // 实验性功能配置
-  experimental: {
-    // Server Actions 配置（Next.js 15 默认开启）
-    serverActions: {
-      // 允许跨域调用 Server Actions（如果需要）
-      // allowedOrigins: ['*'],
-    },
-  },
-  
   // 环境变量（构建时可用）
   // 注意：这些值会被打包到客户端，不要放敏感信息
   env: {
     // 应用名称（用于页面标题等）
     NEXT_PUBLIC_APP_NAME: 'Helix Mirror',
     // 应用版本
-    NEXT_PUBLIC_APP_VERSION: '0.2.0',
+    NEXT_PUBLIC_APP_VERSION: '0.5.0',
   },
   
   // 头部配置（安全头等）

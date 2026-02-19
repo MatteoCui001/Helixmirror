@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     
     if (!validationResult.success) {
       // 格式化 Zod 错误信息
-      const errors = validationResult.error.errors.map(e => ({
+      const errors = validationResult.error.issues.map((e) => ({
         field: e.path.join('.'),
         message: e.message,
       }));

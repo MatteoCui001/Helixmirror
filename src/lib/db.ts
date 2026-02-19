@@ -205,12 +205,12 @@ function insertDefaultAgents(db: Database.Database): void {
  * - 便于后续切换数据库（如 PostgreSQL）
  */
 interface UnifiedDatabase {
-  query: (sql: string, params?: any[]) => { rows: any[]; rowCount?: number };
+  query: (sql: string, params?: unknown[]) => { rows: unknown[]; rowCount?: number };
   exec: (sql: string) => void;
   prepare: (sql: string) => {
-    run: (...params: any[]) => { lastInsertRowid: number | bigint };
-    all: (...params: any[]) => any[];
-    get: (...params: any[]) => any | undefined;
+    run: (...params: unknown[]) => { lastInsertRowid: number | bigint };
+    all: (...params: unknown[]) => unknown[];
+    get: (...params: unknown[]) => unknown;
   };
   close: () => void;
 }
@@ -224,7 +224,7 @@ export function getDatabase(): UnifiedDatabase {
   const db = getSQLiteDb();
   
   return {
-    query: (sql: string, params?: any[]) => {
+    query: (sql: string, params?: unknown[]) => {
       const stmt = db.prepare(sql);
       const rows = params ? stmt.all(...params) : stmt.all();
       return { rows, rowCount: rows.length };
@@ -233,12 +233,12 @@ export function getDatabase(): UnifiedDatabase {
     prepare: (sql: string) => {
       const stmt = db.prepare(sql);
       return {
-        run: (...params: any[]) => {
+        run: (...params: unknown[]) => {
           const result = stmt.run(...params);
           return { lastInsertRowid: result.lastInsertRowid };
         },
-        all: (...params: any[]) => stmt.all(...params),
-        get: (...params: any[]) => stmt.get(...params),
+        all: (...params: unknown[]) => stmt.all(...params),
+        get: (...params: unknown[]) => stmt.get(...params),
       };
     },
     close: () => {

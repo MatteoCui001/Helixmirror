@@ -1,4 +1,4 @@
-/"""
+/**
  * 仪表盘内容组件
  * 
  * 用途：分离数据获取逻辑，配合 Suspense 使用
@@ -7,10 +7,14 @@
  * - Suspense 需要包装异步组件
  * - 页面级组件保持简洁
  * - 便于测试和维护
- * """
+ */
 
-import { getCachedAgentStats, getCachedTodayOverview, getCachedRecentActivities } from '@/lib/queries';
-import { getCachedProjectStats } from '@/lib/projects';
+import {
+  getCachedAgentStats,
+  getCachedTodayOverview,
+  getCachedRecentActivities,
+  getCachedProjectStats,
+} from '@/lib/cache';
 import { AgentCard } from '@/components/AgentCard';
 import { StatCard } from '@/components/StatCard';
 import { ActivityList } from '@/components/ActivityList';
@@ -35,7 +39,7 @@ export async function DashboardContent() {
     Promise.resolve(getCachedAgentStats()),
     Promise.resolve(getCachedTodayOverview()),
     Promise.resolve(getCachedRecentActivities(10)),
-    Promise.resolve(getCachedProjectStats())
+    Promise.resolve(getCachedProjectStats()),
   ]);
   
   return (
