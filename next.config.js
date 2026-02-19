@@ -16,6 +16,9 @@
  */
 
 /** @type {import('next').NextConfig} */
+const deployProfile = process.env.DEPLOY_PROFILE || 'local';
+const corsOrigin = process.env.API_CORS_ORIGIN || '*';
+
 const nextConfig = {
   // 生成独立部署包
   // standalone 模式：
@@ -39,6 +42,8 @@ const nextConfig = {
     NEXT_PUBLIC_APP_NAME: 'Helix Mirror',
     // 应用版本
     NEXT_PUBLIC_APP_VERSION: '0.5.0',
+    // 部署配置（local/cloud）
+    NEXT_PUBLIC_DEPLOY_PROFILE: deployProfile,
   },
   
   // 头部配置（安全头等）
@@ -50,7 +55,7 @@ const nextConfig = {
           // API 路由的 CORS 配置
           {
             key: 'Access-Control-Allow-Origin',
-            value: '*',
+            value: corsOrigin,
           },
           {
             key: 'Access-Control-Allow-Methods',

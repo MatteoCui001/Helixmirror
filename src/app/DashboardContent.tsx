@@ -16,6 +16,7 @@ import {
   getCachedProjectStats,
   getCachedRoutingMetrics,
   getCachedRecentRoutingLogs,
+  getCachedSyncHealthStatus,
 } from '@/lib/cache';
 import { AgentCard } from '@/components/AgentCard';
 import { StatCard } from '@/components/StatCard';
@@ -23,6 +24,8 @@ import { ActivityList } from '@/components/ActivityList';
 import { AgentActivityChart } from '@/components/AgentActivityChart';
 import { AgentRouter } from '@/components/AgentRouter';
 import { RoutingLogsList } from '@/components/RoutingLogsList';
+import { RoutingMetricsPanel } from '@/components/RoutingMetricsPanel';
+import { SyncHealthPanel } from '@/components/SyncHealthPanel';
 import Link from 'next/link';
 
 /**
@@ -40,6 +43,7 @@ export async function DashboardContent() {
     projectStats,
     routingMetrics,
     routingLogs,
+    syncHealthStatus,
   ] = await Promise.all([
     Promise.resolve(getCachedAgentStats()),
     Promise.resolve(getCachedTodayOverview()),
@@ -47,6 +51,7 @@ export async function DashboardContent() {
     Promise.resolve(getCachedProjectStats()),
     Promise.resolve(getCachedRoutingMetrics()),
     Promise.resolve(getCachedRecentRoutingLogs(8)),
+    Promise.resolve(getCachedSyncHealthStatus()),
   ]);
   
   return (
@@ -148,9 +153,9 @@ export async function DashboardContent() {
           </div>
         </div>
 
-        <section>
+        <section className="mb-8">
           <h2 className="text-lg font-semibold text-white mb-4">🎯 路由洞察</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="bg-gray-800 rounded-lg p-5">
               <div className="text-sm text-gray-400 mb-2">累计路由记录</div>
               <div className="text-3xl font-bold text-white">{routingMetrics.total}</div>
@@ -161,8 +166,11 @@ export async function DashboardContent() {
             <div className="lg:col-span-2">
               <RoutingLogsList logs={routingLogs} />
             </div>
+            <RoutingMetricsPanel metrics={routingMetrics} />
           </div>
         </section>
+
+        <SyncHealthPanel status={syncHealthStatus} />
       </main>
     </>
   );

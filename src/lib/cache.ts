@@ -16,6 +16,7 @@ import { cache } from 'react';
 import { getAgentStats, getTodayOverview, getRecentActivities } from './queries';
 import { getProjectStats, getAllProjects } from './projects';
 import { getRecentRoutingLogs, getRoutingMetrics } from './routing-logs';
+import { getSyncHealthStatus } from './sync-health';
 
 /**
  * 缓存的 Agent 统计
@@ -66,6 +67,11 @@ export const getCachedRecentRoutingLogs = cache((limit: number = 10) => {
  * 缓存的路由指标
  */
 export const getCachedRoutingMetrics = cache(getRoutingMetrics);
+
+/**
+ * 缓存的同步健康状态
+ */
+export const getCachedSyncHealthStatus = cache(getSyncHealthStatus);
 
 /**
  * 清空所有缓存（调试用）

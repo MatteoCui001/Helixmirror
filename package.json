@@ -9,9 +9,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cloud": "DEPLOY_PROFILE=cloud next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "rm -rf .next/types && tsc --noEmit",
+    "test:smoke": "node scripts/ci-smoke.mjs",
+    "cloud:check": "node scripts/check-cloud-profile.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^12.0.0",

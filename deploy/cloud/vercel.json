@@ -1,0 +1,5 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "DEPLOY_PROFILE=cloud npm run build:cloud",
+  "installCommand": "npm install"
+}

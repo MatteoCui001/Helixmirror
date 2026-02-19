@@ -3,6 +3,7 @@ import { checkRateLimit, getClientIp, RATE_LIMIT_MAX } from '@/lib/rate-limit';
 import { validateToken, unauthorizedResponse, isDevelopment } from '@/lib/auth';
 import { getDatabase } from '@/lib/db';
 import { CreateRoutingLogSchema, QueryRoutingLogsSchema } from '@/lib/validation';
+import { getRecentRoutingLogs, getRoutingMetrics } from '@/lib/routing-logs';
 
 function errorResponse(message: string, details?: unknown, status: number = 400) {
   return NextResponse.json({ error: message, details }, { status });
@@ -120,31 +121,8 @@ export async function GET(request: NextRequest) {
 
     const limit = validationResult.success ? validationResult.data.limit : 20;
 
-    const db = getDatabase();
-    const logs = db.prepare(`
-      SELECT
-        id,
-        input_text as inputText,
-        recommended_agent_id as recommendedAgentId,
-        recommended_score as recommendedScore,
-        user_selected_agent_id as userSelectedAgentId,
-        was_accepted as wasAccepted,
-        created_at as createdAt
-      FROM routing_logs
-      ORDER BY created_at DESC
-      LIMIT ?
-    `).all(limit);
-
-    const stats = db.prepare(`
-      SELECT
-        COUNT(*) as total,
-        COALESCE(SUM(CASE WHEN was_accepted = 1 THEN 1 ELSE 0 END), 0) as accepted
-      FROM routing_logs
-    `).get() as { total: number; accepted: number } | undefined;
-
-    const total = stats?.total ?? 0;
-    const accepted = stats?.accepted ?? 0;
-    const acceptanceRate = total > 0 ? Number(((accepted / total) * 100).toFixed(2)) : 0;
+    const logs = getRecentRoutingLogs(limit);
+    const metrics = getRoutingMetrics(7);
 
     return NextResponse.json(
       {
@@ -152,11 +130,7 @@ export async function GET(request: NextRequest) {
         logs,
         count: logs.length,
         limit,
-        metrics: {
-          total,
-          accepted,
-          acceptanceRate,
-        },
+        metrics,
       },
       { headers: rateLimitHeaders(checkResult.rateLimit) }
     );

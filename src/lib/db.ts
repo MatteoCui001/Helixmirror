@@ -162,6 +162,16 @@ function initSQLiteTables(db: Database.Database): void {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_routing_logs_created_at
+    ON routing_logs(created_at)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_routing_logs_agent
+    ON routing_logs(recommended_agent_id)
+  `);
   
   // 插入默认 Agents（如果不存在）
   insertDefaultAgents(db);

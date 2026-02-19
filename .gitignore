@@ -15,6 +15,7 @@ data/*.db-journal
 data/*.db-shm
 data/*.db-wal
 data/logs/*.log
+data/logs/sync-status.json
 
 # Build outputs
 .next/

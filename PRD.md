@@ -1,8 +1,8 @@
 # Helix Mirror - Product Requirements Document
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Date:** 2026-02-19  
-**Status:** Phase 1.5 Delivered
+**Status:** Phase 2 In Progress
 
 ## 1. Background
 
@@ -39,6 +39,8 @@ Provide one local-first operating panel to:
 - Agent state cards
 - Recent activity list
 - Embedded keyword router
+- Routing insights (by-agent acceptance, trend, mismatch keywords)
+- Sync health panel (last success, failure streak, recent runs)
 
 ### 5.2 Project Memory (`/projects`)
 
@@ -50,6 +52,8 @@ Provide one local-first operating panel to:
 
 - Interactions API for ingestion/query
 - Projects API for CRUD-lite (list/create/get/update-status)
+- Routing feedback API for recommendation quality analysis
+- Sync status API for operations observability
 
 ### 5.4 Data Sync
 
@@ -85,6 +89,7 @@ Provide one local-first operating panel to:
 - API auth in production by `API_TOKEN`
 - Per-IP in-memory rate-limit
 - Uniform error response format
+- Scheduled sync retries + webhook alert + status persistence
 
 ## 8. Data Model
 
@@ -151,6 +156,7 @@ A delivery is complete only if all are true:
 4. Dashboard and project pages render
 5. API endpoints respond with validated data and consistent errors
 6. README/SPEC/PRD versions and scope are aligned
+7. CI pipeline runs typecheck/lint/build/smoke on push/PR
 
 ## 11. Milestones
 
@@ -168,11 +174,12 @@ A delivery is complete only if all are true:
 - Validation/auth/rate-limit hardening
 - Sync scripts for OpenClaw data
 
-### Phase 2 (Planned)
+### Phase 2 (In Progress)
 
-- Better routing feedback loop using `routing_logs` (basic logging shipped)
-- Route recommendation acceptance analytics
-- Optional cloud deployment profile
+- Route acceptance analytics by agent and day (shipped)
+- Sync observability panel and `sync-status` API (shipped)
+- CI + API smoke tests (shipped)
+- Optional cloud deployment profile (shipped as profile config, migration optional)
 
 ## 12. Risks
 

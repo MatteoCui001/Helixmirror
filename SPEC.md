@@ -1,6 +1,6 @@
 # Helix Mirror - Product Spec
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Date:** 2026-02-19
 
 ## Product Summary
@@ -15,6 +15,9 @@ Helix Mirror is a local-first dashboard for observing and coordinating multiple 
 4. Interaction/project APIs with validation, auth, and rate-limit
 5. Manual and scheduled data sync scripts from local OpenClaw data
 6. Routing feedback loop with acceptance metrics (`routing_logs`)
+7. Sync health status API and dashboard observability panel
+8. CI pipeline (typecheck + lint + build + API smoke)
+9. Optional cloud deployment profile (`DEPLOY_PROFILE=cloud`)
 
 ## Out of Scope (Current)
 
@@ -82,7 +85,15 @@ Helix Mirror is a local-first dashboard for observing and coordinating multiple 
 ### FR-6 Routing Feedback API
 
 - `POST /api/routing-logs` records recommendation vs user choice
-- `GET /api/routing-logs` returns recent logs and acceptance metrics
+- `GET /api/routing-logs` returns recent logs and acceptance metrics:
+  - by-agent acceptance rate
+  - 7-day trend
+  - top mismatch keywords
+
+### FR-7 Sync Health API
+
+- `GET /api/sync-status` returns latest sync health state from persisted status file
+- Scheduled sync runner retries on failure and emits alert webhook when configured
 
 ## Non-Functional Requirements
 
@@ -96,5 +107,6 @@ Helix Mirror is a local-first dashboard for observing and coordinating multiple 
 - `npm run typecheck` passes
 - `npm run lint` passes
 - `npm run build` passes
+- `npm run test:smoke` passes
 - Dashboard and `/projects` render correctly
 - APIs above return expected success/error responses
