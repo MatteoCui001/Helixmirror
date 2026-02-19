@@ -170,7 +170,7 @@ A delivery is complete only if all are true:
 
 ### Phase 2 (Planned)
 
-- Better routing feedback loop using `routing_logs`
+- Better routing feedback loop using `routing_logs` (basic logging shipped)
 - Route recommendation acceptance analytics
 - Optional cloud deployment profile
 

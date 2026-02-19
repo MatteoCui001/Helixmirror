@@ -13,7 +13,7 @@ interface StatCardProps {
   title: string;      // 指标名称
   value: number;      // 数值
   icon: string;       // Emoji 图标
-  color: 'blue' | 'purple' | 'green';  // 颜色主题
+  color: 'blue' | 'purple' | 'green' | 'gray';  // 颜色主题
 }
 
 /**
@@ -32,6 +32,10 @@ function getColorClasses(color: StatCardProps['color']): { bg: string; icon: str
     green: {
       bg: 'bg-green-900/20 border-green-700',
       icon: 'bg-green-500'
+    },
+    gray: {
+      bg: 'bg-gray-700/50 border-gray-600',
+      icon: 'bg-gray-500'
     }
   };
   return colorMap[color];

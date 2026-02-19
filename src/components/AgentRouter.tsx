@@ -111,6 +111,31 @@ export function AgentRouter() {
     return colors[color] || colors.gray;
   };
 
+  const handleRecommendationClick = (selectedAgentId: string) => {
+    if (!input.trim() || recommendations.length === 0) {
+      return;
+    }
+
+    const topRecommendation = recommendations[0];
+    const payload = {
+      inputText: input.trim(),
+      recommendedAgentId: topRecommendation.agentId,
+      recommendedScore: topRecommendation.score,
+      userSelectedAgentId: selectedAgentId,
+      wasAccepted: selectedAgentId === topRecommendation.agentId,
+    };
+
+    // 用户即将跳转到外部协议，使用 keepalive 尽量确保日志请求发送成功
+    fetch('/api/routing-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {
+      // 采集失败不影响主流程
+    });
+  };
+
   return (
     <div className="bg-gray-800 rounded-lg p-6">
       <h3 className="text-lg font-semibold text-white mb-4">🎯 Agent 智能路由</h3>
@@ -170,6 +195,7 @@ export function AgentRouter() {
                 
                 <a
                   href={rec.channel === 'Discord' ? 'discord://' : 'feishu://'}
+                  onClick={() => handleRecommendationClick(rec.agentId)}
                   className="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
                 >
                   打开 {rec.channel}

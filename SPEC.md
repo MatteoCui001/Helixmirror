@@ -14,6 +14,7 @@ Helix Mirror is a local-first dashboard for observing and coordinating multiple 
 3. Project memory layer (SQLite-backed)
 4. Interaction/project APIs with validation, auth, and rate-limit
 5. Manual and scheduled data sync scripts from local OpenClaw data
+6. Routing feedback loop with acceptance metrics (`routing_logs`)
 
 ## Out of Scope (Current)
 
@@ -77,6 +78,11 @@ Helix Mirror is a local-first dashboard for observing and coordinating multiple 
 - Validate payload via Zod
 - Production requires bearer token
 - Rate-limit by client IP
+
+### FR-6 Routing Feedback API
+
+- `POST /api/routing-logs` records recommendation vs user choice
+- `GET /api/routing-logs` returns recent logs and acceptance metrics
 
 ## Non-Functional Requirements
 

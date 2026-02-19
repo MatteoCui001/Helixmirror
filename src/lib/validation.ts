@@ -107,6 +107,44 @@ export const UpdateProjectStatusSchema = z.object({
 });
 
 // ===========================================
+// 路由日志相关 Schema
+// ===========================================
+
+/**
+ * 创建路由日志请求
+ *
+ * POST /api/routing-logs
+ */
+export const CreateRoutingLogSchema = z.object({
+  inputText: z.string()
+    .min(1, '输入内容不能为空')
+    .max(1000, '输入内容不能超过 1000 字符'),
+  recommendedAgentId: AgentIdSchema,
+  recommendedScore: z.number()
+    .int('推荐分必须是整数')
+    .min(0, '推荐分不能小于 0')
+    .max(10000, '推荐分不能超过 10000'),
+  userSelectedAgentId: AgentIdSchema.optional(),
+  wasAccepted: z.boolean(),
+});
+
+/**
+ * 查询路由日志请求
+ *
+ * GET /api/routing-logs?limit=20
+ */
+export const QueryRoutingLogsSchema = z.object({
+  limit: z.string()
+    .optional()
+    .transform((val) => {
+      if (!val) return 20;
+      const num = parseInt(val, 10);
+      if (isNaN(num)) return 20;
+      return Math.min(Math.max(num, 1), 100);
+    }),
+});
+
+// ===========================================
 // 类型导出（从 Schema 推断）
 // ===========================================
 
@@ -114,3 +152,5 @@ export type AddInteractionInput = z.infer<typeof AddInteractionSchema>;
 export type QueryInteractionsInput = z.infer<typeof QueryInteractionsSchema>;
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;
 export type UpdateProjectStatusInput = z.infer<typeof UpdateProjectStatusSchema>;
+export type CreateRoutingLogInput = z.infer<typeof CreateRoutingLogSchema>;
+export type QueryRoutingLogsInput = z.infer<typeof QueryRoutingLogsSchema>;

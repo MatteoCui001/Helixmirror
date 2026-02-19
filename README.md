@@ -38,6 +38,8 @@ Helix Mirror 是一个本地优先的多 Agent 观察与路由仪表盘，聚合
 - `POST /api/projects`
 - `GET /api/projects/:id`
 - `PATCH /api/projects/:id`
+- `GET /api/routing-logs`
+- `POST /api/routing-logs`
 
 ## 说明
 

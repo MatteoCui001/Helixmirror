@@ -14,12 +14,15 @@ import {
   getCachedTodayOverview,
   getCachedRecentActivities,
   getCachedProjectStats,
+  getCachedRoutingMetrics,
+  getCachedRecentRoutingLogs,
 } from '@/lib/cache';
 import { AgentCard } from '@/components/AgentCard';
 import { StatCard } from '@/components/StatCard';
 import { ActivityList } from '@/components/ActivityList';
 import { AgentActivityChart } from '@/components/AgentActivityChart';
 import { AgentRouter } from '@/components/AgentRouter';
+import { RoutingLogsList } from '@/components/RoutingLogsList';
 import Link from 'next/link';
 
 /**
@@ -34,12 +37,16 @@ export async function DashboardContent() {
     agentStats,
     todayOverview,
     recentActivities,
-    projectStats
+    projectStats,
+    routingMetrics,
+    routingLogs,
   ] = await Promise.all([
     Promise.resolve(getCachedAgentStats()),
     Promise.resolve(getCachedTodayOverview()),
     Promise.resolve(getCachedRecentActivities(10)),
     Promise.resolve(getCachedProjectStats()),
+    Promise.resolve(getCachedRoutingMetrics()),
+    Promise.resolve(getCachedRecentRoutingLogs(8)),
   ]);
   
   return (
@@ -85,7 +92,7 @@ export async function DashboardContent() {
 
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-white mb-4">📊 今日概览</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <StatCard
               title="总消息数"
               value={todayOverview.totalMessages}
@@ -104,6 +111,12 @@ export async function DashboardContent() {
               icon="🗣️"
               color="purple"
             />
+            <StatCard
+              title="路由接受率"
+              value={Number(routingMetrics.acceptanceRate.toFixed(1))}
+              icon="🎯"
+              color="gray"
+            />
           </div>
         </section>
 
@@ -114,7 +127,7 @@ export async function DashboardContent() {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <div className="lg:col-span-2">
             <h2 className="text-lg font-semibold text-white mb-4">🤖 Agent 状态</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,6 +147,22 @@ export async function DashboardContent() {
             </div>
           </div>
         </div>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white mb-4">🎯 路由洞察</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-gray-800 rounded-lg p-5">
+              <div className="text-sm text-gray-400 mb-2">累计路由记录</div>
+              <div className="text-3xl font-bold text-white">{routingMetrics.total}</div>
+              <div className="text-sm text-gray-500 mt-2">
+                接受 {routingMetrics.accepted} 次
+              </div>
+            </div>
+            <div className="lg:col-span-2">
+              <RoutingLogsList logs={routingLogs} />
+            </div>
+          </div>
+        </section>
       </main>
     </>
   );
