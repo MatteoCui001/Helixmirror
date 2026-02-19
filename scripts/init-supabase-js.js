@@ -15,9 +15,14 @@ const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
 
-// Supabase 配置
-const SUPABASE_URL = 'https://iqvoitnkhwxppayabafr.supabase.co';
-const SUPABASE_KEY = 'REDACTED_SUPABASE_KEY';
+// Supabase 配置（必须通过环境变量注入）
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('❌ 缺少 SUPABASE_URL 或 SUPABASE_KEY 环境变量');
+  process.exit(1);
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 

@@ -18,9 +18,14 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// 数据库连接配置
-const connectionString = process.env.DATABASE_URL || 
-  'postgresql://postgres:REDACTED_DB_PASSWORD@db.iqvoitnkhwxppayabafr.supabase.co:5432/postgres';
+// 数据库连接配置（必须通过环境变量注入）
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error('❌ 缺少 DATABASE_URL 环境变量');
+  console.error('示例: postgresql://postgres:password@db.xxx.supabase.co:5432/postgres');
+  process.exit(1);
+}
 
 /**
  * 创建表结构 SQL
