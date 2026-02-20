@@ -1,10 +1,13 @@
 /**
  * 定时同步任务脚本（带重试 + 告警 + 状态持久化）
  *
- * 用途：每小时自动运行数据同步，并维护可观测状态文件
+ * 用途：每 3 小时自动运行数据同步，并维护可观测状态文件
  *
  * 使用方法：
  *   node scripts/cron-sync.js
+ *
+ * crontab 示例（每 3 小时整点执行）：
+ *   0 */3 * * * cd ~/Projects/helix-mirror && /opt/homebrew/bin/node scripts/cron-sync.js
  *
  * 可选环境变量：
  * - SYNC_MAX_RETRIES=3
