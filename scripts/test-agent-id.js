@@ -12,6 +12,7 @@ const testCases = [
   { message: "分析一下特斯拉的财报", channel: "Discord", expected: "alpha" },
   { message: "你好，有什么可以帮你的？", channel: "Discord", expected: "helix" },
   { message: "npm run build 构建失败了", channel: "Discord", expected: "craft" },
+  { message: "  Helix Mirror   同步失败", channel: "Discord", expected: "craft" },
   { message: "这支股票值得买吗？", channel: "Discord", expected: "alpha" }
 ];
 
