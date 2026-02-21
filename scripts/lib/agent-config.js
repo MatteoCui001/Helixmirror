@@ -28,7 +28,7 @@ const AGENT_IDENTITY_RULES = [
       '代码', '开发', 'bug', '修复', '编程', 'api',
       '数据库', '前端', '后端', 'react', 'next',
       'typescript', 'git', '部署', 'claude', 'npm',
-      '构建', '编译', '脚本', 'sync', ' Helix Mirror'
+      '构建', '编译', '脚本', 'sync', 'helix mirror'
     ],
     messagePrefixes: ['好的', '请', '我会', '开始', '完成'],
     fallbackScore: 8
@@ -70,18 +70,21 @@ function identifyAgentByMessage(message, channel) {
   
   // Discord 渠道需要分析内容
   const candidates = AGENT_IDENTITY_RULES.filter(r => r.channel === 'Discord');
+  const normalizedMessage = message.trim().toLowerCase();
+  const normalizedRawMessage = message.trim();
   
   let bestMatch = { agentId: 'helix', score: 0, confidence: 0 };
   
   for (const rule of candidates) {
     let score = 0;
-    const lowerMessage = message.toLowerCase();
     
     // 关键词匹配
     for (const keyword of rule.keywords) {
-      if (lowerMessage.includes(keyword.toLowerCase())) {
+      const normalizedKeyword = keyword.trim().toLowerCase();
+
+      if (normalizedMessage.includes(normalizedKeyword)) {
         score += 10;
-        if (lowerMessage.startsWith(keyword.toLowerCase())) {
+        if (normalizedMessage.startsWith(normalizedKeyword)) {
           score += 5;
         }
       }
@@ -89,7 +92,9 @@ function identifyAgentByMessage(message, channel) {
     
     // 前缀匹配
     for (const prefix of rule.messagePrefixes) {
-      if (message.startsWith(prefix)) {
+      const normalizedPrefix = prefix.trim().toLowerCase();
+
+      if (normalizedMessage.startsWith(normalizedPrefix) || normalizedRawMessage.startsWith(prefix.trim())) {
         score += 8;
       }
     }
